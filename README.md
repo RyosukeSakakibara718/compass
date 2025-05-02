@@ -20,3 +20,7 @@ npm run dev
 ## 実装の確認方法
 下記にて描画しています。<br />
 http://localhost:3000/facilitators
+
+## 評価観点に関して
+[こちら](evaluation-perspective.md)に記載しております。
+ご一読いただけますと幸いです。
