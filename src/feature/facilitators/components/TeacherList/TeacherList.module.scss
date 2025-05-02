@@ -1,0 +1,65 @@
+.table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ddd;
+
+  th,
+  td {
+    width: 288px;
+    max-width: 288px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 16px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+  }
+
+  th {
+    border: 1px solid #ddd;
+    color: #fff;
+  }
+
+  tr:nth-child(odd) {
+    td {
+      background-color: #ffffff;
+    }
+  }
+
+  tr:nth-child(even) {
+    td {
+      background-color: #f8f9f9;
+    }
+  }
+  
+  /* ヘッダーセルデフォルト */
+  .headerCell {
+    background-color: #4f6c62;
+    color: #fff;
+    cursor: pointer;
+  }
+  
+  /* アクティブソートヘッダー */
+  .headerCellActive {
+    background-color: #24473b;
+  }
+  
+  .chevron {
+    transition: transform 0.2s ease;
+  }
+  
+  .sortButton {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+  }
+}
+
+.empty {
+  text-align: center;
+  color: #777;
+  margin: 1rem 0;
+}
+
