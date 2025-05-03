@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fetchFacilitators, FetchFacilitatorsParams } from '../api/facilitators';
+import {
+  fetchFacilitators,
+  FetchFacilitatorsParams,
+} from '../api/facilitators';
 import { Facilitator } from '@/types/facilitator';
 
 type SortKey = 'name' | 'loginId';
 type Order = 'asc' | 'desc';
 
-interface UseFacilitatorsResult {
+type UseFacilitatorsResult = {
   paginatedData: Facilitator[];
   loading: boolean;
   error: Error | null;
@@ -21,7 +24,7 @@ interface UseFacilitatorsResult {
   setSort: (key: SortKey, order: Order) => void;
   setFilter: (value: string) => void;
   setPage: (page: number) => void;
-}
+};
 
 const ITEMS_PER_PAGE = 20;
 
@@ -84,7 +87,8 @@ export default function useFacilitators(): UseFacilitatorsResult {
   const paginatedData = data;
   const totalCount = totalCountState;
   const totalPages = totalPagesState;
-  const startItem = totalCount === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const startItem =
+    totalCount === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
   const endItem = (currentPage - 1) * ITEMS_PER_PAGE + paginatedData.length;
 
   return {
@@ -104,4 +108,4 @@ export default function useFacilitators(): UseFacilitatorsResult {
     setFilter,
     setPage: setCurrentPage,
   };
-} 
+}

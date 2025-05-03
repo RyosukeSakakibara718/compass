@@ -32,23 +32,23 @@
       background-color: #f8f9f9;
     }
   }
-  
+
   /* ヘッダーセルデフォルト */
   .headerCell {
     background-color: #4f6c62;
     color: #fff;
     cursor: pointer;
   }
-  
+
   /* アクティブソートヘッダー */
   .headerCellActive {
     background-color: #24473b;
   }
-  
+
   .chevron {
     transition: transform 0.2s ease;
   }
-  
+
   .sortButton {
     display: flex;
     align-items: center;
@@ -62,4 +62,3 @@
   color: #777;
   margin: 1rem 0;
 }
-

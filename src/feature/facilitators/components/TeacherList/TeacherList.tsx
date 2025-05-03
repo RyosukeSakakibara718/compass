@@ -1,18 +1,18 @@
-import React from "react";
-import styles from "./TeacherList.module.scss";
-import { Facilitator } from "@/types/facilitator";
-import { ChevronDown } from "lucide-react";
+import React from 'react';
+import styles from './TeacherList.module.scss';
+import { Facilitator } from '@/types/facilitator';
+import { ChevronDown } from 'lucide-react';
 
 // ソートキーとオーダー
-type SortKey = "name" | "loginId";
-type Order = "asc" | "desc";
+type SortKey = 'name' | 'loginId';
+type Order = 'asc' | 'desc';
 
-interface TeacherListProps {
+type TeacherListProps = {
   teachers: Facilitator[];
   sortKey: SortKey;
   order: Order;
   onSortChange: (key: SortKey, order: Order) => void;
-}
+};
 
 const TeacherList: React.FC<TeacherListProps> = ({
   teachers,
@@ -29,11 +29,11 @@ const TeacherList: React.FC<TeacherListProps> = ({
       <thead>
         <tr>
           <th
-            className={`${styles.headerCell} ${sortKey === "name" ? styles.headerCellActive : ""}`}
+            className={`${styles.headerCell} ${sortKey === 'name' ? styles.headerCellActive : ''}`}
             onClick={() =>
               onSortChange(
-                "name",
-                sortKey === "name" && order === "asc" ? "desc" : "asc"
+                'name',
+                sortKey === 'name' && order === 'asc' ? 'desc' : 'asc',
               )
             }
           >
@@ -41,16 +41,21 @@ const TeacherList: React.FC<TeacherListProps> = ({
               <p>名前</p>
               <ChevronDown
                 className={styles.chevron}
-                style={{ transform: sortKey === 'name' && order === 'asc' ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                style={{
+                  transform:
+                    sortKey === 'name' && order === 'asc'
+                      ? 'rotate(180deg)'
+                      : 'rotate(0deg)',
+                }}
               />
             </div>
           </th>
           <th
-            className={`${styles.headerCell} ${sortKey === "loginId" ? styles.headerCellActive : ""}`}
+            className={`${styles.headerCell} ${sortKey === 'loginId' ? styles.headerCellActive : ''}`}
             onClick={() =>
               onSortChange(
-                "loginId",
-                sortKey === "loginId" && order === "asc" ? "desc" : "asc"
+                'loginId',
+                sortKey === 'loginId' && order === 'asc' ? 'desc' : 'asc',
               )
             }
           >
@@ -58,11 +63,16 @@ const TeacherList: React.FC<TeacherListProps> = ({
               <p>ログインID</p>
               <ChevronDown
                 className={styles.chevron}
-                style={{ transform: sortKey === 'loginId' && order === 'asc' ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                style={{
+                  transform:
+                    sortKey === 'loginId' && order === 'asc'
+                      ? 'rotate(180deg)'
+                      : 'rotate(0deg)',
+                }}
               />
             </div>
           </th>
-          <th　className={styles.headerCell}></th>
+          <th className={styles.headerCell}></th>
         </tr>
       </thead>
       <tbody>

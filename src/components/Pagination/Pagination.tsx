@@ -1,15 +1,15 @@
-import React from "react";
-import styles from "./Pagination.module.scss";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import React from 'react';
+import styles from './Pagination.module.scss';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-interface PaginationProps {
+type PaginationProps = {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
   totalCount: number;
   startItem: number;
   endItem: number;
-}
+};
 
 const Pagination: React.FC<PaginationProps> = ({
   currentPage,

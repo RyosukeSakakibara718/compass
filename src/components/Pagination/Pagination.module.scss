@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: space-between;
   margin: 50px 0 100px;
-  
+
   /* 表示件数のテキスト */
   .infoText {
     margin-right: auto;
@@ -13,7 +13,7 @@
     color: #333;
   }
 
-  /* ページネーション */ 
+  /* ページネーション */
   .pagination {
     display: flex;
     align-items: center;
@@ -50,7 +50,7 @@
       font-size: 0.875rem;
       color: #333;
     }
-    
+
     /* アクティブページ番号ボタン */
     .pageButtonActive {
       background: #24473b;
@@ -59,7 +59,3 @@
     }
   }
 }
-
-
-
-

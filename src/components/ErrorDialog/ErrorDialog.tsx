@@ -1,17 +1,19 @@
 import React from 'react';
 import styles from './ErrorDialog.module.scss';
 
-interface ErrorDialogProps {
+type ErrorDialogProps = {
   message: string;
   onRetry: () => void;
-}
+};
 
 const ErrorDialog: React.FC<ErrorDialogProps> = ({ message, onRetry }) => {
   return (
     <div className={styles.overlay}>
       <div className={styles.dialog}>
         <p>{message}</p>
-        <button className={styles.retryButton} onClick={onRetry}>リトライ</button>
+        <button className={styles.retryButton} onClick={onRetry}>
+          リトライ
+        </button>
       </div>
     </div>
   );

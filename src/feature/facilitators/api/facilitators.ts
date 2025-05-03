@@ -1,16 +1,23 @@
 import { Facilitator } from '@/types/facilitator';
 
-export interface FetchFacilitatorsParams {
+export type FetchFacilitatorsParams = {
   page: number;
   limit: number;
   sort: string;
   order: string;
   filterValue?: string;
-}
+};
 
-export async function fetchFacilitators(
-  { page, limit, sort, order, filterValue }: FetchFacilitatorsParams
-): Promise<{ data: Facilitator[]; totalCount: number }> {
+export async function fetchFacilitators({
+  page,
+  limit,
+  sort,
+  order,
+  filterValue,
+}: FetchFacilitatorsParams): Promise<{
+  data: Facilitator[];
+  totalCount: number;
+}> {
   const params = new URLSearchParams();
   params.append('_page', String(page));
   params.append('_limit', String(limit));
@@ -26,6 +33,8 @@ export async function fetchFacilitators(
   }
   const data: Facilitator[] = await res.json();
   const totalCountHeader = res.headers.get('X-Total-Count');
-  const totalCount = totalCountHeader ? parseInt(totalCountHeader) : data.length;
+  const totalCount = totalCountHeader
+    ? parseInt(totalCountHeader)
+    : data.length;
   return { data, totalCount };
-} 
+}
