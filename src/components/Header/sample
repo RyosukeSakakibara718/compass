@@ -1,0 +1,627 @@
+## TradeManager.java
+
+import java.math.BigDecimal;
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * 取引を管理するクラス
+ */
+public class TradeManager {
+    private List<Trade> trades = new ArrayList<>();
+    private Scanner scanner = new Scanner(System.in);
+
+    /**
+     * コンストラクタ - CSVファイルからデータを読み込み
+     */
+    public TradeManager() {
+        loadTradesFromCsv();
+    }
+
+    /**
+     * 取引を追加する
+     * @param trade 取引データ
+     */
+    public void addTrade(Trade trade) {
+        trades.add(trade);
+        // CSVファイルに自動保存
+        CsvManager.saveTrades(trades);
+    }
+
+    /**
+     * 取引一覧を取得する
+     * @return 取引のリスト
+     */
+    public List<Trade> getTrades() {
+        return new ArrayList<>(trades);
+    }
+
+    /**
+     * CSVファイルから取引データを読み込み
+     */
+    private void loadTradesFromCsv() {
+        trades = CsvManager.loadTrades();
+    }
+
+    /**
+     * 取引データをCSVファイルに手動保存
+     */
+    public void saveTradesToCsv() {
+        CsvManager.saveTrades(trades);
+    }
+
+    /**
+     * 取引入力機能
+     */
+    public void inputTrade() {
+        System.out.println("\n=== 取引入力 ===");
+        
+        try {
+            // 取引日時の入力
+            LocalDateTime tradedDatetime = inputTradedDatetime();
+            
+            // 銘柄の入力
+            String symbol = inputSymbol();
+            
+            // 売買区分の入力
+            Trade.Side side = inputSide();
+            
+            // 数量の入力
+            int quantity = inputQuantity();
+            
+            // 取引単価の入力
+            BigDecimal tradedUnitPrice = inputTradedUnitPrice();
+            
+            // 入力日時は現在時刻
+            LocalDateTime inputDatetime = LocalDateTime.now();
+            
+            // 取引データを作成
+            Trade trade = new Trade(tradedDatetime, symbol, side, quantity, tradedUnitPrice, inputDatetime);
+            
+            // 取引を追加
+            addTrade(trade);
+            
+            System.out.println("\n取引が正常に登録されました:");
+            System.out.println(trade);
+            
+        } catch (Exception e) {
+            System.out.println("エラー: " + e.getMessage());
+            System.out.println("取引入力をキャンセルしました。");
+        }
+    }
+
+    /**
+     * 取引日時の入力
+     */
+    private LocalDateTime inputTradedDatetime() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
+        
+        while (true) {
+            System.out.print("取引日時を入力してください (yyyy/MM/dd HH:mm): ");
+            if (!scanner.hasNextLine()) {
+                throw new RuntimeException("入力が中断されました");
+            }
+            String input = scanner.nextLine().trim();
+            
+            try {
+                LocalDateTime tradedDatetime = LocalDateTime.parse(input, formatter);
+                
+                // 現在時刻より過去かチェック
+                LocalDateTime now = LocalDateTime.now();
+                if (tradedDatetime.isAfter(now)) {
+                    System.out.println("エラー: 取引日時は現在時刻より過去である必要があります。");
+                    continue;
+                }
+                
+                // 平日の9:00-15:30かチェック
+                if (!isValidTradingTime(tradedDatetime)) {
+                    System.out.println("エラー: 取引日時は平日の9:00-15:30の間である必要があります。");
+                    continue;
+                }
+                
+                return tradedDatetime;
+                
+            } catch (DateTimeParseException e) {
+                System.out.println("エラー: 日時の形式が正しくありません。例: 2024/01/15 10:30");
+            }
+        }
+    }
+
+    /**
+     * 銘柄の入力
+     */
+    private String inputSymbol() {
+        while (true) {
+            System.out.print("銘柄コードを入力してください: ");
+            if (!scanner.hasNextLine()) {
+                throw new RuntimeException("入力が中断されました");
+            }
+            String symbol = scanner.nextLine().trim();
+            
+            if (symbol.isEmpty()) {
+                System.out.println("エラー: 銘柄コードを入力してください。");
+                continue;
+            }
+            
+            if (!StockMaster.isRegistered(symbol)) {
+                System.out.println("エラー: 指定された銘柄は銘柄マスタに登録されていません。");
+                System.out.println("登録済み銘柄: " + StockMaster.getRegisteredStocks());
+                continue;
+            }
+            
+            return symbol;
+        }
+    }
+
+    /**
+     * 売買区分の入力
+     */
+    private Trade.Side inputSide() {
+        while (true) {
+            System.out.print("売買区分を入力してください (1: 買い, 2: 売り): ");
+            if (!scanner.hasNextLine()) {
+                throw new RuntimeException("入力が中断されました");
+            }
+            String input = scanner.nextLine().trim();
+            
+            switch (input) {
+                case "1":
+                    return Trade.Side.BUY;
+                case "2":
+                    return Trade.Side.SELL;
+                default:
+                    System.out.println("エラー: 1または2を入力してください。");
+            }
+        }
+    }
+
+    /**
+     * 数量の入力
+     */
+    private int inputQuantity() {
+        while (true) {
+            System.out.print("数量を入力してください (100株単位): ");
+            if (!scanner.hasNextLine()) {
+                throw new RuntimeException("入力が中断されました");
+            }
+            String input = scanner.nextLine().trim();
+            
+            try {
+                int quantity = Integer.parseInt(input);
+                
+                if (quantity <= 0) {
+                    System.out.println("エラー: 数量は正の値である必要があります。");
+                    continue;
+                }
+                
+                if (quantity % 100 != 0) {
+                    System.out.println("エラー: 数量は100株単位で入力してください。");
+                    continue;
+                }
+                
+                return quantity;
+                
+            } catch (NumberFormatException e) {
+                System.out.println("エラー: 数値を入力してください。");
+            }
+        }
+    }
+
+    /**
+     * 取引単価の入力
+     */
+    private BigDecimal inputTradedUnitPrice() {
+        while (true) {
+            System.out.print("取引単価を入力してください (円): ");
+            if (!scanner.hasNextLine()) {
+                throw new RuntimeException("入力が中断されました");
+            }
+            String input = scanner.nextLine().trim();
+            
+            try {
+                BigDecimal price = new BigDecimal(input);
+                
+                if (price.compareTo(BigDecimal.ZERO) <= 0) {
+                    System.out.println("エラー: 取引単価は正の値である必要があります。");
+                    continue;
+                }
+                
+                // 小数点以下第2位までに丸める
+                price = price.setScale(2, java.math.RoundingMode.HALF_UP);
+                
+                return price;
+                
+            } catch (NumberFormatException e) {
+                System.out.println("エラー: 数値を入力してください。");
+            }
+        }
+    }
+
+    /**
+     * 取引時間が有効かチェック
+     */
+    private boolean isValidTradingTime(LocalDateTime datetime) {
+        DayOfWeek dayOfWeek = datetime.getDayOfWeek();
+        LocalTime time = datetime.toLocalTime();
+        
+        // 平日かチェック（月曜=1, 金曜=5）
+        if (dayOfWeek.getValue() < 1 || dayOfWeek.getValue() > 5) {
+            return false;
+        }
+        
+        // 9:00-15:30かチェック
+        LocalTime startTime = LocalTime.of(9, 0);
+        LocalTime endTime = LocalTime.of(15, 30);
+        
+        return !time.isBefore(startTime) && !time.isAfter(endTime);
+    }
+
+    /**
+     * 取引一覧を表示
+     */
+    public void displayTrades() {
+        System.out.println("\n=== 取引一覧 ===");
+        if (trades.isEmpty()) {
+            System.out.println("取引データがありません。");
+        } else {
+            for (int i = 0; i < trades.size(); i++) {
+                System.out.println((i + 1) + ". " + trades.get(i));
+            }
+        }
+    }
+}
+
+
+
+// ===============================================================================================================================================
+// ===============================================================================================================================================
+
+## StockTradingApp.java
+
+import java.util.Scanner;
+
+/**
+ * 株式取引アプリケーションのメインクラス
+ */
+public class StockTradingApp {
+    private TradeManager tradeManager;
+    private Scanner scanner;
+
+    public StockTradingApp() {
+        this.tradeManager = new TradeManager();
+        this.scanner = new Scanner(System.in);
+    }
+
+    /**
+     * アプリケーションのメイン処理
+     */
+    public void run() {
+        System.out.println("=== 株式取引システム ===");
+        
+        while (true) {
+            displayMenu();
+            int choice = getMenuChoice();
+            
+            switch (choice) {
+                case 1:
+                    tradeManager.inputTrade();
+                    break;
+                case 2:
+                    tradeManager.displayTrades();
+                    break;
+                case 3:
+                    displayStockMaster();
+                    break;
+                case 4:
+                    tradeManager.saveTradesToCsv();
+                    break;
+                case 5:
+                    deleteCsvFile();
+                    break;
+                case 0:
+                    System.out.println("アプリケーションを終了します。");
+                    return;
+                default:
+                    System.out.println("無効な選択です。");
+            }
+            
+            System.out.println("\nEnterキーを押して続行...");
+            scanner.nextLine();
+        }
+    }
+
+    /**
+     * メニューを表示
+     */
+    private void displayMenu() {
+        System.out.println("\n=== メニュー ===");
+        System.out.println("1. 取引入力");
+        System.out.println("2. 取引一覧表示");
+        System.out.println("3. 銘柄マスタ表示");
+        System.out.println("4. CSVファイル手動保存");
+        System.out.println("5. CSVファイル削除");
+        System.out.println("0. 終了");
+        System.out.print("選択してください: ");
+    }
+
+    /**
+     * メニュー選択を取得
+     */
+    private int getMenuChoice() {
+        while (true) {
+            try {
+                if (scanner.hasNextLine()) {
+                    String input = scanner.nextLine().trim();
+                    return Integer.parseInt(input);
+                } else {
+                    return 0; // 入力がない場合は終了
+                }
+            } catch (NumberFormatException e) {
+                System.out.print("数値を入力してください: ");
+            }
+        }
+    }
+
+    /**
+     * 銘柄マスタを表示
+     */
+    private void displayStockMaster() {
+        System.out.println("\n=== 銘柄マスタ ===");
+        System.out.println("登録済み銘柄:");
+        for (String symbol : StockMaster.getRegisteredStocks()) {
+            System.out.println("- " + symbol);
+        }
+    }
+
+    /**
+     * CSVファイルを削除
+     */
+    private void deleteCsvFile() {
+        System.out.println("\n=== CSVファイル削除 ===");
+        System.out.print("CSVファイルを削除しますか？ (y/N): ");
+        String input = scanner.nextLine().trim().toLowerCase();
+        
+        if (input.equals("y") || input.equals("yes")) {
+            CsvManager.deleteCsvFile();
+        } else {
+            System.out.println("CSVファイルの削除をキャンセルしました。");
+        }
+    }
+
+    /**
+     * メイン処理
+     */
+    public static void main(String[] args) {
+        StockTradingApp app = new StockTradingApp();
+        app.run();
+    }
+}
+
+
+
+// ===============================================================================================================================================
+// ===============================================================================================================================================
+
+
+## StockMaster.java
+
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * 銘柄マスタを管理するクラス
+ */
+public class StockMaster {
+    private static final Set<String> registeredStocks = new HashSet<>();
+
+    static {
+        // 初期データとして主要な銘柄を登録
+        registeredStocks.add("7203"); // トヨタ自動車
+        registeredStocks.add("6758"); // ソニー
+        registeredStocks.add("9984"); // ソフトバンクグループ
+        registeredStocks.add("9432"); // 日本電信電話
+        registeredStocks.add("8306"); // 三菱UFJフィナンシャル・グループ
+        registeredStocks.add("6861"); // キーエンス
+        registeredStocks.add("4063"); // 信越化学工業
+        registeredStocks.add("8058"); // 三菱商事
+        registeredStocks.add("8035"); // 東京エレクトロン
+        registeredStocks.add("4519"); // 中外製薬
+    }
+
+    /**
+     * 銘柄が登録されているかチェックする
+     * @param symbol 銘柄コード
+     * @return 登録されている場合true
+     */
+    public static boolean isRegistered(String symbol) {
+        return registeredStocks.contains(symbol);
+    }
+
+    /**
+     * 銘柄を登録する
+     * @param symbol 銘柄コード
+     */
+    public static void registerStock(String symbol) {
+        registeredStocks.add(symbol);
+    }
+
+    /**
+     * 登録されている銘柄の一覧を取得する
+     * @return 銘柄コードのセット
+     */
+    public static Set<String> getRegisteredStocks() {
+        return new HashSet<>(registeredStocks);
+    }
+}
+
+// ===============================================================================================================================================
+// ===============================================================================================================================================
+
+## CsvManager.java
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * CSVファイルの読み書きを管理するクラス
+ */
+public class CsvManager {
+    private static final String CSV_FILE = "trades.csv";
+    private static final String CSV_HEADER = "取引日時,銘柄,売買区分,数量,取引単価,入力日時";
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
+
+    /**
+     * 取引データをCSVファイルに保存
+     * @param trades 取引データのリスト
+     */
+    public static void saveTrades(List<Trade> trades) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(CSV_FILE, false))) {
+            // ヘッダーを書き込み
+            writer.println(CSV_HEADER);
+            
+            // 取引データを書き込み
+            for (Trade trade : trades) {
+                writer.println(formatTradeToCsv(trade));
+            }
+            
+            System.out.println("取引データをCSVファイルに保存しました: " + CSV_FILE);
+            
+        } catch (IOException e) {
+            System.err.println("CSVファイルの保存中にエラーが発生しました: " + e.getMessage());
+        }
+    }
+
+    /**
+     * CSVファイルから取引データを読み込み
+     * @return 取引データのリスト
+     */
+    public static List<Trade> loadTrades() {
+        List<Trade> trades = new ArrayList<>();
+        
+        File file = new File(CSV_FILE);
+        if (!file.exists()) {
+            System.out.println("CSVファイルが存在しません。新しいファイルを作成します。");
+            return trades;
+        }
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(CSV_FILE))) {
+            String line;
+            boolean isFirstLine = true;
+            
+            while ((line = reader.readLine()) != null) {
+                // ヘッダー行をスキップ
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                }
+                
+                // 空行をスキップ
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+                
+                try {
+                    Trade trade = parseCsvToTrade(line);
+                    if (trade != null) {
+                        trades.add(trade);
+                    }
+                } catch (Exception e) {
+                    System.err.println("CSV行の解析中にエラーが発生しました: " + line);
+                    System.err.println("エラー: " + e.getMessage());
+                }
+            }
+            
+            System.out.println("CSVファイルから " + trades.size() + " 件の取引データを読み込みました。");
+            
+        } catch (IOException e) {
+            System.err.println("CSVファイルの読み込み中にエラーが発生しました: " + e.getMessage());
+        }
+        
+        return trades;
+    }
+
+    /**
+     * 取引データをCSV形式の文字列に変換
+     * @param trade 取引データ
+     * @return CSV形式の文字列
+     */
+    private static String formatTradeToCsv(Trade trade) {
+        return String.format("%s,%s,%s,%d,%.2f,%s",
+                trade.getTradedDatetime().format(DATETIME_FORMATTER),
+                trade.getSymbol(),
+                trade.getSide().name(),
+                trade.getQuantity(),
+                trade.getTradedUnitPrice().doubleValue(),
+                trade.getInputDatetime().format(DATETIME_FORMATTER));
+    }
+
+    /**
+     * CSV形式の文字列を取引データに変換
+     * @param csvLine CSV形式の文字列
+     * @return 取引データ
+     */
+    private static Trade parseCsvToTrade(String csvLine) {
+        String[] fields = csvLine.split(",");
+        
+        if (fields.length != 6) {
+            throw new IllegalArgumentException("CSV行のフィールド数が正しくありません: " + fields.length);
+        }
+        
+        try {
+            // 取引日時
+            LocalDateTime tradedDatetime = LocalDateTime.parse(fields[0].trim(), DATETIME_FORMATTER);
+            
+            // 銘柄
+            String symbol = fields[1].trim();
+            
+            // 売買区分
+            Trade.Side side = Trade.Side.valueOf(fields[2].trim());
+            
+            // 数量
+            int quantity = Integer.parseInt(fields[3].trim());
+            
+            // 取引単価
+            BigDecimal tradedUnitPrice = new BigDecimal(fields[4].trim());
+            
+            // 入力日時
+            LocalDateTime inputDatetime = LocalDateTime.parse(fields[5].trim(), DATETIME_FORMATTER);
+            
+            return new Trade(tradedDatetime, symbol, side, quantity, tradedUnitPrice, inputDatetime);
+            
+        } catch (Exception e) {
+            throw new IllegalArgumentException("CSV行の解析に失敗しました: " + csvLine, e);
+        }
+    }
+
+    /**
+     * CSVファイルが存在するかチェック
+     * @return ファイルが存在する場合true
+     */
+    public static boolean csvFileExists() {
+        return new File(CSV_FILE).exists();
+    }
+
+    /**
+     * CSVファイルを削除
+     */
+    public static void deleteCsvFile() {
+        File file = new File(CSV_FILE);
+        if (file.exists()) {
+            if (file.delete()) {
+                System.out.println("CSVファイルを削除しました: " + CSV_FILE);
+            } else {
+                System.err.println("CSVファイルの削除に失敗しました: " + CSV_FILE);
+            }
+        }
+    }
+}
