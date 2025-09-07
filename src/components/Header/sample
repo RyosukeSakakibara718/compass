@@ -7,6 +7,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -275,7 +276,52 @@ public class TradeManager {
             }
         }
     }
+
+    /**
+     * 取引一覧を表形式で表示（取引日時の降順）
+     */
+    public void displayTradesTable() {
+        System.out.println("\n=== 取引一覧 ===");
+        
+        // CSVファイルから最新データを読み込み
+        loadTradesFromCsv();
+        
+        if (trades.isEmpty()) {
+            System.out.println("取引データがありません。");
+            return;
+        }
+        
+        // 取引日時の降順でソート
+        List<Trade> sortedTrades = new ArrayList<>(trades);
+        sortedTrades.sort(Comparator.comparing(Trade::getTradedDatetime).reversed());
+        
+        // 表のヘッダーを表示
+        System.out.println("+------------------+----------+------------------+--------+----------+----------+");
+        System.out.println("| 取引日時          | 銘柄コード | 銘柄名            | 売買区分 | 数量      | 取引単価  |");
+        System.out.println("+------------------+----------+------------------+--------+----------+----------+");
+        
+        // 取引データを表示
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
+        for (Trade trade : sortedTrades) {
+            String tradedDate = trade.getTradedDatetime().format(formatter);
+            String symbol = trade.getSymbol();
+            String stockName = StockMaster.getStockName(symbol);
+            if (stockName == null) {
+                stockName = "不明";
+            }
+            String side = trade.getSide().getDisplayName();
+            String quantity = String.format("%d株", trade.getQuantity());
+            String price = String.format("%.2f円", trade.getTradedUnitPrice().doubleValue());
+            
+            System.out.printf("| %-16s | %-8s | %-16s | %-6s | %-8s | %-8s |%n",
+                    tradedDate, symbol, stockName, side, quantity, price);
+        }
+        
+        System.out.println("+------------------+----------+------------------+--------+----------+----------+");
+        System.out.println("合計取引数: " + sortedTrades.size() + " 件");
+    }
 }
+
 
 
 
@@ -313,7 +359,7 @@ public class StockTradingApp {
                     tradeManager.inputTrade();
                     break;
                 case 2:
-                    tradeManager.displayTrades();
+                    tradeManager.displayTradesTable();
                     break;
                 case 3:
                     displayStockMaster();
@@ -342,7 +388,7 @@ public class StockTradingApp {
     private void displayMenu() {
         System.out.println("\n=== メニュー ===");
         System.out.println("1. 取引入力");
-        System.out.println("2. 取引一覧表示");
+        System.out.println("2. 取引一覧表示（表形式）");
         System.out.println("3. 銘柄マスタ表示");
         System.out.println("4. CSVファイル手動保存");
         System.out.println("5. CSVファイル削除");
@@ -373,10 +419,27 @@ public class StockTradingApp {
      */
     private void displayStockMaster() {
         System.out.println("\n=== 銘柄マスタ ===");
-        System.out.println("登録済み銘柄:");
-        for (String symbol : StockMaster.getRegisteredStocks()) {
-            System.out.println("- " + symbol);
+        
+        var allStocks = StockMaster.getAllStocks();
+        if (allStocks.isEmpty()) {
+            System.out.println("登録されている銘柄がありません。");
+            return;
         }
+        
+        // 表のヘッダーを表示
+        System.out.println("+----------+------------------+");
+        System.out.println("| 銘柄コード | 銘柄名            |");
+        System.out.println("+----------+------------------+");
+        
+        // 銘柄データを表示
+        for (var entry : allStocks.entrySet()) {
+            String symbol = entry.getKey();
+            String name = entry.getValue();
+            System.out.printf("| %-8s | %-16s |%n", symbol, name);
+        }
+        
+        System.out.println("+----------+------------------+");
+        System.out.println("合計銘柄数: " + allStocks.size() + " 件");
     }
 
     /**
@@ -402,6 +465,7 @@ public class StockTradingApp {
         app.run();
     }
 }
+
 
 
 
@@ -623,5 +687,113 @@ public class CsvManager {
                 System.err.println("CSVファイルの削除に失敗しました: " + CSV_FILE);
             }
         }
+    }
+}
+
+// ===============================================================================================================================================
+// ===============================================================================================================================================
+
+// trade.java
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+/**
+ * 取引データを表すクラス
+ */
+public class Trade {
+    private LocalDateTime tradedDatetime;  // 取引日時
+    private String symbol;                 // 銘柄
+    private Side side;                     // 売買区分
+    private int quantity;                  // 数量（100株単位）
+    private BigDecimal tradedUnitPrice;    // 取引単価（小数点以下第2位まで）
+    private LocalDateTime inputDatetime;   // 入力日時
+
+    /**
+     * 売買区分を表す列挙型
+     */
+    public enum Side {
+        BUY("買い"),
+        SELL("売り");
+
+        private final String displayName;
+
+        Side(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+    }
+
+    /**
+     * コンストラクタ
+     */
+    public Trade(LocalDateTime tradedDatetime, String symbol, Side side, 
+                 int quantity, BigDecimal tradedUnitPrice, LocalDateTime inputDatetime) {
+        this.tradedDatetime = tradedDatetime;
+        this.symbol = symbol;
+        this.side = side;
+        this.quantity = quantity;
+        this.tradedUnitPrice = tradedUnitPrice;
+        this.inputDatetime = inputDatetime;
+    }
+
+    // ゲッター
+    public LocalDateTime getTradedDatetime() {
+        return tradedDatetime;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public Side getSide() {
+        return side;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public BigDecimal getTradedUnitPrice() {
+        return tradedUnitPrice;
+    }
+
+    public LocalDateTime getInputDatetime() {
+        return inputDatetime;
+    }
+
+    // セッター
+    public void setTradedDatetime(LocalDateTime tradedDatetime) {
+        this.tradedDatetime = tradedDatetime;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public void setSide(Side side) {
+        this.side = side;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
+    public void setTradedUnitPrice(BigDecimal tradedUnitPrice) {
+        this.tradedUnitPrice = tradedUnitPrice;
+    }
+
+    public void setInputDatetime(LocalDateTime inputDatetime) {
+        this.inputDatetime = inputDatetime;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("取引日時: %s, 銘柄: %s, %s, 数量: %d株, 単価: %.2f円, 入力日時: %s",
+                tradedDatetime, symbol, side.getDisplayName(), quantity, 
+                tradedUnitPrice.doubleValue(), inputDatetime);
     }
 }
