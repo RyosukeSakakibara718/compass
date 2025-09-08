@@ -797,3 +797,55 @@ public class Trade {
                 tradedUnitPrice.doubleValue(), inputDatetime);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+import java.util.*;
+
+public class BrandAggregator {
+    public static void main(String[] args) {
+        // 元のリスト（例: "Nike,001,10"）
+        List<String> data = Arrays.asList(
+                "Nike,001,10",
+                "Nike,001,20",
+                "Adidas,002,15",
+                "Puma,003,5",
+                "Adidas,002,25"
+        );
+
+        // Map<brandCode, [brandName, totalQuantity]>
+        Map<String, String[]> aggregated = new HashMap<>();
+
+        for (String record : data) {
+            String[] parts = record.split(",");
+            String brandName = parts[0];
+            String brandCode = parts[1];
+            int quantity = Integer.parseInt(parts[2]);
+
+            if (aggregated.containsKey(brandCode)) {
+                String[] current = aggregated.get(brandCode);
+                int newTotal = Integer.parseInt(current[2]) + quantity;
+                aggregated.put(brandCode, new String[]{brandName, brandCode, String.valueOf(newTotal)});
+            } else {
+                aggregated.put(brandCode, new String[]{brandName, brandCode, String.valueOf(quantity)});
+            }
+        }
+
+        // 結果を新しいリストに変換
+        List<String> result = new ArrayList<>();
+        for (String[] values : aggregated.values()) {
+            result.add(String.join(",", values));
+        }
+
+        // 出力
+        result.forEach(System.out::println);
+    }
+}
